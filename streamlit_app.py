@@ -12,7 +12,7 @@ device = torch.device('cpu')
 model.to(device)
 
 # Charger le fichier CSV contenant les données à prédire
-df = pd.read_csv("https://github.com/Ishika94140/streamlit-example/blob/37706a6a58203ebfc25b49dd210eeb2c39b0e804/training_file_1.csv", encoding='latin1')
+df = pd.read_csv("https://raw.githubusercontent.com/Ishika94140/streamlit-example/master/training_file_1.csv", encoding='latin1')
 
 # Prétraiter les données
 abstracts = df['Abstract'].tolist()

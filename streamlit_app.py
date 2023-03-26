@@ -1,11 +1,7 @@
 import streamlit as st
 import pandas as pd
-import torch
 from transformers import DistilBertTokenizer, DistilBertForSequenceClassification
-
-# Installer les dépendances nécessaires
-!pip install pandas
-!pip install transformers
+import torch
 
 # Charger le modèle et tokenizer
 tokenizer = DistilBertTokenizer.from_pretrained('distilbert-base-uncased')
@@ -16,7 +12,7 @@ device = torch.device('cpu')
 model.to(device)
 
 # Charger le fichier CSV contenant les données à prédire
-df = pd.read_csv("testttt.csv", encoding='latin1')
+df = pd.read_csv("https://github.com/Ishika94140/streamlit-example/blob/37706a6a58203ebfc25b49dd210eeb2c39b0e804/training_file_1.csv", encoding='latin1')
 
 # Prétraiter les données
 abstracts = df['Abstract'].tolist()
@@ -24,8 +20,10 @@ encoded_abstracts = tokenizer(abstracts, padding=True, truncation=True, return_t
 input_ids = encoded_abstracts['input_ids']
 attention_masks = encoded_abstracts['attention_mask']
 
-# Créer l'interface utilisateur avec Streamlit
-st.title("Détection de plagiat")
+# Définir l'application Streamlit
+st.title("Détection de plagiat dans les abstracts")
+
+# Récupérer l'abstract déposé par l'utilisateur
 user_abstract = st.text_input("Entrez l'abstract : ")
 
 # Faire les prédictions si l'abstract de l'utilisateur est différent des abstracts dans le jeu de données

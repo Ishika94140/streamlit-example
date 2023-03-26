@@ -1,38 +1,49 @@
-from collections import namedtuple
-import altair as alt
-import math
-import pandas as pd
 import streamlit as st
+import pandas as pd
+import torch
+from transformers import DistilBertTokenizer, DistilBertForSequenceClassification
 
-"""
-# Welcome to Streamlit!
+# Installer les dépendances nécessaires
+!pip install pandas
+!pip install transformers
 
-Edit `/streamlit_app.py` to customize this app to your heart's desire :heart:
+# Charger le modèle et tokenizer
+tokenizer = DistilBertTokenizer.from_pretrained('distilbert-base-uncased')
+model = DistilBertForSequenceClassification.from_pretrained('distilbert-base-uncased', num_labels=2)
 
-If you have any questions, checkout our [documentation](https://docs.streamlit.io) and [community
-forums](https://discuss.streamlit.io).
+# Désactiver le calcul sur le GPU
+device = torch.device('cpu')
+model.to(device)
 
-In the meantime, below is an example of what you can do with just a few lines of code:
-"""
+# Charger le fichier CSV contenant les données à prédire
+df = pd.read_csv("testttt.csv", encoding='latin1')
 
+# Prétraiter les données
+abstracts = df['Abstract'].tolist()
+encoded_abstracts = tokenizer(abstracts, padding=True, truncation=True, return_tensors='pt')
+input_ids = encoded_abstracts['input_ids']
+attention_masks = encoded_abstracts['attention_mask']
 
-with st.echo(code_location='below'):
-    total_points = st.slider("Number of points in spiral", 1, 5000, 2000)
-    num_turns = st.slider("Number of turns in spiral", 1, 100, 9)
+# Créer l'interface utilisateur avec Streamlit
+st.title("Détection de plagiat")
+user_abstract = st.text_input("Entrez l'abstract : ")
 
-    Point = namedtuple('Point', 'x y')
-    data = []
+# Faire les prédictions si l'abstract de l'utilisateur est différent des abstracts dans le jeu de données
+if user_abstract not in abstracts:
+    encoded_user_abstract = tokenizer(user_abstract, padding=True, truncation=True, return_tensors='pt')
+    user_input_ids = encoded_user_abstract['input_ids']
+    user_attention_mask = encoded_user_abstract['attention_mask']
 
-    points_per_turn = total_points / num_turns
+    with torch.no_grad():
+        model.eval()
+        user_input_ids = user_input_ids.to(device)
+        user_attention_mask = user_attention_mask.to(device)
+        output = model(user_input_ids, attention_mask=user_attention_mask)
+        pred = output[0].argmax(dim=1).tolist()[0]
 
-    for curr_point_num in range(total_points):
-        curr_turn, i = divmod(curr_point_num, points_per_turn)
-        angle = (curr_turn + 1) * 2 * math.pi * i / points_per_turn
-        radius = curr_point_num / total_points
-        x = radius * math.cos(angle)
-        y = radius * math.sin(angle)
-        data.append(Point(x, y))
-
-    st.altair_chart(alt.Chart(pd.DataFrame(data), height=500, width=500)
-        .mark_circle(color='#0068c9', opacity=0.5)
-        .encode(x='x:Q', y='y:Q'))
+    if pred == 1:
+        st.write("Plagiat détecté !")
+    else:
+        st.write("Aucun plagiat détecté.")
+else:
+    st.write("L'abstract est déjà présent dans le jeu de données, plagiat détecté.")
